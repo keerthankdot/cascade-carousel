@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cascading Gallery Slider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0d0d0d;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 28px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ─── Slider ───────────────────────────────────────────────────────── */
+
+.slider {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 1120px;
+  height: 580px;
+}
+
+/* ─── Card base ─────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  flex: 1 1 0%;           /* flex-grow:1 strip state */
+  min-width: 68px;
+  border-radius: 26px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  /* spring: slight overshoot for tactile feel */
+  transition: flex-grow 0.72s cubic-bezier(0.32, 1.28, 0.55, 1);
+}
+
+.card.active {
+  flex-grow: 8;
+  cursor: default;
+}
+
+.card:not(.active):hover {
+  flex-grow: 1.4;
+}
+
+/* ─── Background image ──────────────────────────────────────────────── */
+
+.card__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.72s cubic-bezier(0.32, 1.28, 0.55, 1);
+}
+
+.card:not(.active):hover .card__bg {
+  transform: scale(1.08);
+}
+
+/* ─── Strip dark tint (disappears when active) ───────────────────────── */
+
+.card:not(.active)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.22);
+  transition: background 0.3s ease;
+  pointer-events: none;
+}
+
+.card:not(.active):hover::before {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ─── Gradient scrim (active only) ─────────────────────────────────── */
+
+.card__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    transparent 20%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.52s ease;
+  pointer-events: none;
+}
+
+.card.active .card__scrim {
+  opacity: 1;
+}
+
+/* ─── Text content (active only) ────────────────────────────────────── */
+
+.card__content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 30px 32px 34px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.38s ease 0.18s,
+    transform 0.38s ease 0.18s;
+  pointer-events: none;
+}
+
+.card.active .card__content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card__label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.52);
+  margin-bottom: 8px;
+}
+
+.card__title {
+  font-size: 34px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1.2px;
+  line-height: 1.02;
+  margin-bottom: 10px;
+}
+
+.card__desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.62;
+  max-width: 360px;
+}
+
+/* ─── Strip icon ─────────────────────────────────────────────────────── */
+
+.card__icon {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.card.active .card__icon {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.6);
+  pointer-events: none;
+}
+
+/* ─── Keyboard hint ─────────────────────────────────────────────────── */
+
+.hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<p class="eyebrow">Explore destinations</p>
+<div class="slider" id="slider"></div>
+<p class="hint">click a strip &nbsp;·&nbsp; ← → to navigate</p>
+
+<script>
+/* ─── Icon SVGs ─────────────────────────────────────────────────────── */
+
+function sunSvg(color) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+  </svg>`;
+}
+
+function mountainSvg(color) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 20l6-10 4 6 3-4 5 8H3z"/>
+  </svg>`;
+}
+
+function snowflakeSvg(color) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round">
+    <line x1="12" y1="2" x2="12" y2="22"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/>
+  </svg>`;
+}
+
+function dropSvg(color) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+  </svg>`;
+}
+
+/* ─── Card data ─────────────────────────────────────────────────────── */
+
+const CARDS = [
+  {
+    id: 0,
+    title: 'Inatethi',
+    label: 'Desert',
+    desc: 'A vast expanse of golden dunes where the horizon burns amber and time suspends itself in heat.',
+    img: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1400&q=80&auto=format',
+    iconColor: '#fb923c',
+    iconBg: 'rgba(251,146,60,0.28)',
+    icon: sunSvg('#fb923c'),
+  },
+  {
+    id: 1,
+    title: 'Blonkisoaz',
+    label: 'Mountain',
+    desc: 'Towering pines shrouded in morning mist — a cathedral of green where silence breathes and echoes.',
+    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80&auto=format',
+    iconColor: '#86efac',
+    iconBg: 'rgba(134,239,172,0.28)',
+    icon: mountainSvg('#86efac'),
+  },
+  {
+    id: 2,
+    title: 'Oretemauw',
+    label: 'Arctic',
+    desc: 'A lone road carved through infinite white, where the cold sings and solitude reigns absolute.',
+    img: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=1400&q=80&auto=format',
+    iconColor: '#93c5fd',
+    iconBg: 'rgba(147,197,253,0.28)',
+    icon: snowflakeSvg('#93c5fd'),
+  },
+  {
+    id: 3,
+    title: 'Iteresuselle',
+    label: 'Woodland',
+    desc: 'A weathered cabin deep in ancient forest, where amber embers glow and no clock dares to tick.',
+    img: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&q=80&auto=format',
+    iconColor: '#fbbf24',
+    iconBg: 'rgba(251,191,36,0.28)',
+    icon: sunSvg('#fbbf24'),
+  },
+  {
+    id: 4,
+    title: 'Idiefe',
+    label: 'Lakeside',
+    desc: 'Mirror-still waters reflecting an emerald canopy above — a world doubled in perfect glass.',
+    img: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1400&q=80&auto=format',
+    iconColor: '#34d399',
+    iconBg: 'rgba(52,211,153,0.28)',
+    icon: dropSvg('#34d399'),
+  },
+];
+
+/* ─── State ─────────────────────────────────────────────────────────── */
+
+let activeId = 0;
+
+/* ─── Build DOM ─────────────────────────────────────────────────────── */
+
+function buildSlider() {
+  const slider = document.getElementById('slider');
+  CARDS.forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'card' + (card.id === activeId ? ' active' : '');
+    el.dataset.id = card.id;
+    el.innerHTML = `
+      <div class="card__bg" style="background-image:url('${card.img}')"></div>
+      <div class="card__scrim"></div>
+      <div class="card__content">
+        <span class="card__label">${card.label}</span>
+        <div class="card__title">${card.title}</div>
+        <div class="card__desc">${card.desc}</div>
+      </div>
+      <div class="card__icon" style="background:${card.iconBg}">${card.icon}</div>
+    `;
+    el.addEventListener('click', () => activate(parseInt(el.dataset.id)));
+    slider.appendChild(el);
+  });
+}
+
+/* ─── Activate ──────────────────────────────────────────────────────── */
+
+function activate(id) {
+  if (id === activeId) return;
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.toggle('active', parseInt(c.dataset.id) === id);
+  });
+  activeId = id;
+}
+
+/* ─── Keyboard nav ──────────────────────────────────────────────────── */
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') activate((activeId + 1) % CARDS.length);
+  if (e.key === 'ArrowLeft')  activate((activeId - 1 + CARDS.length) % CARDS.length);
+});
+
+buildSlider();
+</script>
+</body>
+</html>
