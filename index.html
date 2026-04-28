@@ -13,7 +13,7 @@ html, body { height: 100%; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0d0d0d;
+  background: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,7 @@ body {
   font-weight: 600;
   letter-spacing: 3.5px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.35);
 }
 
 /* ─── Slider ───────────────────────────────────────────────────────── */
@@ -38,7 +38,7 @@ body {
   gap: 12px;
   width: 100%;
   max-width: 1120px;
-  height: 580px;
+  height: calc(min(100vw - 96px, 1072px) * 3 / 8);
 }
 
 /* ─── Card base ─────────────────────────────────────────────────────── */
@@ -74,6 +74,12 @@ body {
   transition: transform 0.72s cubic-bezier(0.32, 1.28, 0.55, 1);
 }
 
+.card__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .card:not(.active):hover .card__bg {
   transform: scale(1.08);
 }
@@ -101,7 +107,7 @@ body {
   inset: 0;
   z-index: 2;
   background: linear-gradient(
-    180deg,
+    0deg,
     transparent 20%,
     rgba(0, 0, 0, 0.12) 50%,
     rgba(0, 0, 0, 0.72) 100%
@@ -119,13 +125,13 @@ body {
 
 .card__content {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 3;
   padding: 30px 32px 34px;
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(-16px);
   transition:
     opacity 0.38s ease 0.18s,
     transform 0.38s ease 0.18s;
@@ -177,9 +183,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(ellipse at 38% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.04) 55%, transparent 72%),
+    rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px) brightness(1.15) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) brightness(1.15) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.7),
+    inset 0 -1px 0 rgba(0,0,0,0.08),
+    0 6px 20px rgba(0,0,0,0.2);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0;
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
@@ -195,44 +212,71 @@ body {
 
 .hint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(0, 0, 0, 0.25);
   letter-spacing: 0.5px;
 }
 </style>
 </head>
 <body>
 
-<p class="eyebrow">Explore destinations</p>
 <div class="slider" id="slider"></div>
 <p class="hint">click a strip &nbsp;·&nbsp; ← → to navigate</p>
 
 <script>
 /* ─── Icon SVGs ─────────────────────────────────────────────────────── */
 
-function sunSvg(color) {
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="4"/>
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+/* Scan — scanner frame with sweep line */
+function scanIcon(c) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+    <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
   </svg>`;
 }
 
-function mountainSvg(color) {
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M3 20l6-10 4 6 3-4 5 8H3z"/>
+/* Heat map — flame */
+function heatmapIcon(c) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
   </svg>`;
 }
 
-function snowflakeSvg(color) {
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round">
-    <line x1="12" y1="2" x2="12" y2="22"/>
-    <line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/>
+/* Calibration — vertical sliders */
+function calibrationIcon(c) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="4" y1="21" x2="4" y2="14"/>
+    <line x1="4" y1="6" x2="4" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="12"/>
+    <line x1="12" y1="4" x2="12" y2="3"/>
+    <line x1="20" y1="21" x2="20" y2="16"/>
+    <line x1="20" y1="8" x2="20" y2="3"/>
+    <line x1="1" y1="14" x2="7" y2="14"/>
+    <line x1="9" y1="4" x2="15" y2="4"/>
+    <line x1="17" y1="16" x2="23" y2="16"/>
   </svg>`;
 }
 
-function dropSvg(color) {
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+/* Report — document with lines */
+function reportIcon(c) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <line x1="10" y1="9" x2="8" y2="9"/>
+  </svg>`;
+}
+
+/* Final mattress — bed */
+function mattressIcon(c) {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/>
+    <path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/>
+    <line x1="2" y1="18" x2="22" y2="18"/>
+    <path d="M6 10V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/>
+    <path d="M13 10V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/>
   </svg>`;
 }
 
@@ -241,53 +285,54 @@ function dropSvg(color) {
 const CARDS = [
   {
     id: 0,
-    title: 'Inatethi',
+    title: 'Scan',
     label: 'Desert',
-    desc: 'A vast expanse of golden dunes where the horizon burns amber and time suspends itself in heat.',
-    img: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1400&q=80&auto=format',
-    iconColor: '#fb923c',
-    iconBg: 'rgba(251,146,60,0.28)',
-    icon: sunSvg('#fb923c'),
+    desc: 'Scans & measures 8 zones of your body to identify exact pressure points. The pressure mapping sensor mat analyzes how your body weight is distributed across 8 zones, detecting areas where support needs adjustment.',
+    img: 'card1.png',
+    iconColor: '#60a5fa',
+    iconBg: 'rgba(96,165,250,0.28)',
+    icon: scanIcon('#ffffff'),
   },
   {
     id: 1,
-    title: 'Blonkisoaz',
+    title: 'Heat map',
     label: 'Mountain',
-    desc: 'Towering pines shrouded in morning mist — a cathedral of green where silence breathes and echoes.',
-    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80&auto=format',
-    iconColor: '#86efac',
-    iconBg: 'rgba(134,239,172,0.28)',
-    icon: mountainSvg('#86efac'),
+    desc: 'In real time the system shows a pressure map from Blue → Red so you can see exactly where your body feels the pressure.',
+    img: 'card2.png',
+    iconColor: '#f87171',
+    iconBg: 'rgba(248,113,113,0.28)',
+    icon: heatmapIcon('#ffffff'),
   },
   {
     id: 2,
-    title: 'Oretemauw',
+    title: 'Calibration',
     label: 'Arctic',
-    desc: 'A lone road carved through infinite white, where the cold sings and solitude reigns absolute.',
-    img: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=1400&q=80&auto=format',
-    iconColor: '#93c5fd',
-    iconBg: 'rgba(147,197,253,0.28)',
-    icon: snowflakeSvg('#93c5fd'),
+    desc: 'The system reconfigures the middle support layer while scanning, until every zone reaches optimal balance — ensuring optimal firmness and comfort across 8 adaptive zones, aligning your spine and reducing pressure points.',
+    img: null,
+    video: 'card3.mp4',
+    iconColor: '#a78bfa',
+    iconBg: 'rgba(167,139,250,0.28)',
+    icon: calibrationIcon('#ffffff'),
   },
   {
     id: 3,
-    title: 'Iteresuselle',
+    title: 'Report',
     label: 'Woodland',
-    desc: 'A weathered cabin deep in ancient forest, where amber embers glow and no clock dares to tick.',
-    img: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&q=80&auto=format',
-    iconColor: '#fbbf24',
-    iconBg: 'rgba(251,191,36,0.28)',
-    icon: sunSvg('#fbbf24'),
+    desc: 'You receive a unique report based on your calibration, helping you proceed with ordering your personalised mattress.',
+    img: 'card4.png',
+    iconColor: '#4ade80',
+    iconBg: 'rgba(74,222,128,0.28)',
+    icon: reportIcon('#ffffff'),
   },
   {
     id: 4,
-    title: 'Idiefe',
+    title: 'Final mattress',
     label: 'Lakeside',
-    desc: 'Mirror-still waters reflecting an emerald canopy above — a world doubled in perfect glass.',
-    img: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1400&q=80&auto=format',
-    iconColor: '#34d399',
-    iconBg: 'rgba(52,211,153,0.28)',
-    icon: dropSvg('#34d399'),
+    desc: 'A one of a kind personalised mattress designed just for you, built from scratch and delivered to your home.',
+    img: 'card5.png',
+    iconColor: '#fbbf24',
+    iconBg: 'rgba(251,191,36,0.28)',
+    icon: mattressIcon('#ffffff'),
   },
 ];
 
@@ -304,14 +349,16 @@ function buildSlider() {
     el.className = 'card' + (card.id === activeId ? ' active' : '');
     el.dataset.id = card.id;
     el.innerHTML = `
-      <div class="card__bg" style="background-image:url('${card.img}')"></div>
+      ${card.video
+        ? `<video class="card__bg card__video" src="${card.video}" autoplay loop muted playsinline></video>`
+        : `<div class="card__bg" style="background-image:url('${card.img}')"></div>`
+      }
       <div class="card__scrim"></div>
       <div class="card__content">
-        <span class="card__label">${card.label}</span>
         <div class="card__title">${card.title}</div>
         <div class="card__desc">${card.desc}</div>
       </div>
-      <div class="card__icon" style="background:${card.iconBg}">${card.icon}</div>
+      <div class="card__icon">${card.id + 1}</div>
     `;
     el.addEventListener('click', () => activate(parseInt(el.dataset.id)));
     slider.appendChild(el);
